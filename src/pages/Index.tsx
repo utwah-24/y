@@ -6,17 +6,28 @@ import Locations from "@/components/Locations";
 import Team from "@/components/Team";
 import Contact from "@/components/Contact";
 import Footer from "@/components/Footer";
+import AnimatedSection from "@/components/ui/animated-section";
 
 const Index = () => {
   return (
     <div className="min-h-screen">
       <Navigation />
       <Hero />
-      <Locations />
-      <Fleet />
-      <Gallery />
-      <Team />
-      <Contact />
+      <AnimatedSection animation="fadeInUp" delay={0}>
+        <Locations />
+      </AnimatedSection>
+      <AnimatedSection animation="fadeInUp" delay={100}>
+        <Fleet />
+      </AnimatedSection>
+      <AnimatedSection animation="fadeInUp" delay={100}>
+        <Gallery />
+      </AnimatedSection>
+      <AnimatedSection animation="fadeInUp" delay={100}>
+        <Team />
+      </AnimatedSection>
+      <AnimatedSection animation="fadeInUp" delay={100}>
+        <Contact />
+      </AnimatedSection>
       <Footer />
     </div>
   );

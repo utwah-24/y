@@ -311,7 +311,7 @@ Please contact the customer to provide a quote.
           <div className="max-w-2xl mx-auto w-full">
             {/* Title */}
             <div className="mb-8">
-              <h1 className="text-4xl font-bold mb-2 font-spartan">
+              <h1 className="text-4xl font-bold mb-2 font-spartan" style={{ fontSize: 'clamp(2rem, 7vw, 70px)' }}>
                 <span className="text-gray-900">Booking</span>{" "}
                 <span className="text-gray-500">without stress</span>
               </h1>

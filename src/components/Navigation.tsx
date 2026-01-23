@@ -19,7 +19,7 @@ const Navigation = () => {
         {/* Logo */}
         <div className="flex items-center space-x-2">
           <Anchor className="h-8 w-8 text-primary" />
-          <span className="text-xl font-bold text-primary">Yachtdealers.tz</span>
+          <span className="text-xl font-bold text-primary font-quicksand">Yachtdealers.tz</span>
         </div>
 
         {/* Desktop Navigation */}

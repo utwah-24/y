@@ -134,7 +134,15 @@ All colors MUST be HSL.
   }
 
   p {
-    font-family: 'Vercetti', sans-serif;
+    font-family: 'League Spartan', sans-serif;
+  }
+
+  h1 {
+    font-family: 'Quicksand', sans-serif;
+  }
+
+  h2 {
+    font-family: 'Quicksand', sans-serif;
   }
 
   h3 {
@@ -142,7 +150,7 @@ All colors MUST be HSL.
   }
 
   span {
-    font-family: 'Vercetti', sans-serif;
+    font-family: 'Quicksand', sans-serif;
   }
 }
 

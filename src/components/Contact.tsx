@@ -52,8 +52,8 @@ const Contact = () => {
     <section id="contact" className="py-20 bg-background">
       <div className="container mx-auto px-4">
         <div className="text-center mb-16">
-          <h2 className="text-4xl md:text-5xl font-bold mb-6 text-foreground font-spartan">
-            Get in <span className="bg-gradient-ocean bg-clip-text text-transparent">Touch</span>
+          <h2 className="text-4xl md:text-5xl font-bold mb-6 text-foreground font-quicksand" style={{ fontSize: 'clamp(2rem, 7vw, 70px)' }}>
+            Get in <span className="bg-gradient-ocean bg-clip-text text-transparent font-quicksand">Touch</span>
           </h2>
           <p className="text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed">
             Ready to embark on your yacht charter adventure? Contact us today to start planning 
@@ -101,7 +101,7 @@ const Contact = () => {
         {/* Operating Hours */}
         <Card className="border-0 bg-card/80 backdrop-blur-sm shadow-luxury">
           <CardHeader className="text-center">
-            <div className="w-16 h-16 bg-gradient-sunset rounded-full flex items-center justify-center mx-auto mb-4">
+            <div className="w-16 h-16 bg-black rounded-full flex items-center justify-center mx-auto mb-4">
               <Clock className="h-8 w-8 text-white" />
             </div>
             <CardTitle className="text-2xl font-bold text-foreground">

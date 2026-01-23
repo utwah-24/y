@@ -1,7 +1,7 @@
 import { useParams, useNavigate } from "react-router-dom";
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Share2, Printer, ChevronLeft, ChevronRight, Phone } from "lucide-react";
+import { Share2, Printer, ChevronLeft, ChevronRight } from "lucide-react";
 import bookingImage1 from "@/assets/booking_image1.jpeg";
 import bookingImage2 from "@/assets/booking_image2.jpeg";
 import bookingImage3 from "@/assets/booking_image3 .jpeg";
@@ -311,6 +311,11 @@ const BoatDetails = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const [scrollProgress, setScrollProgress] = useState(0);
+  const [canScroll, setCanScroll] = useState(false);
+  const [isAtStart, setIsAtStart] = useState(true);
+  const [isAtEnd, setIsAtEnd] = useState(false);
 
   const boat = id ? boatDatabase[id] : null;
 
@@ -318,7 +323,7 @@ const BoatDetails = () => {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-100 px-4">
         <div className="text-center max-w-md w-full">
-          <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-4 font-spartan">Boat Not Found</h1>
+          <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-4 font-spartan" style={{ fontSize: 'clamp(1.5rem, 6vw, 60px)' }}>Boat Not Found</h1>
           <Button onClick={() => navigate("/")} className="mt-4">
             Return to Home
           </Button>
@@ -351,6 +356,51 @@ const BoatDetails = () => {
   const prevImage = () => {
     setSelectedImageIndex((prev) => (prev - 1 + boat.galleryImages.length) % boat.galleryImages.length);
   };
+
+  // Handle scroll tracking for horizontal scrollable section
+  useEffect(() => {
+    const container = scrollContainerRef.current;
+    if (!container) return;
+
+    const checkScrollability = () => {
+      const canScrollHorizontally = container.scrollWidth > container.clientWidth;
+      setCanScroll(canScrollHorizontally);
+    };
+
+    const handleScroll = () => {
+      if (container.scrollWidth > container.clientWidth) {
+        const scrollLeft = container.scrollLeft;
+        const scrollWidth = container.scrollWidth - container.clientWidth;
+        const progress = scrollWidth > 0 ? (scrollLeft / scrollWidth) * 100 : 0;
+        setScrollProgress(progress);
+        
+        // Check if at start or end
+        const atStart = scrollLeft <= 5; // Small threshold for smooth transition
+        const atEnd = scrollLeft >= scrollWidth - 5;
+        setIsAtStart(atStart);
+        setIsAtEnd(atEnd);
+      } else {
+        setScrollProgress(0);
+        setIsAtStart(true);
+        setIsAtEnd(true);
+      }
+    };
+
+    const handleResize = () => {
+      checkScrollability();
+      handleScroll();
+    };
+
+    checkScrollability();
+    handleScroll(); // Initial check
+    container.addEventListener('scroll', handleScroll);
+    window.addEventListener('resize', handleResize);
+
+    return () => {
+      container.removeEventListener('scroll', handleScroll);
+      window.removeEventListener('resize', handleResize);
+    };
+  }, [boat]);
 
   return (
     <div className="min-h-screen bg-white overflow-x-hidden">
@@ -468,7 +518,7 @@ const BoatDetails = () => {
 
             {/* Boat Title */}
             <div className="w-full">
-              <h1 className="text-lg sm:text-xl md:text-2xl lg:text-3xl xl:text-4xl font-bold text-gray-900 mb-1 sm:mb-2 break-words leading-tight font-spartan">
+              <h1 className="text-lg sm:text-xl md:text-2xl lg:text-3xl xl:text-4xl font-bold text-gray-900 mb-1 sm:mb-2 break-words leading-tight font-spartan" style={{ fontSize: 'clamp(1.25rem, 5vw, 50px)' }}>
                 {boat.year} {boat.name}
               </h1>
               <p className="text-sm sm:text-base md:text-lg text-gray-600 break-words">{boat.model}</p>
@@ -497,7 +547,25 @@ const BoatDetails = () => {
 
             {/* Sections - Horizontal scroll on desktop, vertical on mobile */}
             <div className="border-t border-gray-200 pt-3 sm:pt-4 md:pt-6 w-full">
-              <div className="flex flex-col md:flex-row md:overflow-x-auto md:space-x-4 lg:space-x-6 space-y-4 md:space-y-0 pb-4 md:pb-2 scrollbar-hide w-full">
+              <div 
+                ref={scrollContainerRef}
+                className="flex flex-col md:flex-row md:overflow-x-auto md:space-x-4 lg:space-x-6 space-y-4 md:space-y-0 pb-4 md:pb-2 scrollbar-hide w-full relative"
+                style={{
+                  scrollbarWidth: 'none',
+                  msOverflowStyle: 'none',
+                }}
+              >
+                {/* Gradient fade indicators */}
+                {canScroll && (
+                  <>
+                    {!isAtStart && (
+                      <div className="hidden md:block absolute left-0 top-0 bottom-0 w-8 bg-gradient-to-r from-white to-transparent pointer-events-none z-10 transition-opacity duration-300" />
+                    )}
+                    {!isAtEnd && (
+                      <div className="hidden md:block absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-white to-transparent pointer-events-none z-10 transition-opacity duration-300" />
+                    )}
+                  </>
+                )}
                 {/* Price List */}
                 <div className="flex-shrink-0 w-full md:w-72 lg:w-80 space-y-2 sm:space-y-3 md:space-y-4 min-w-0">
                   <h3 className="text-sm sm:text-base md:text-lg font-semibold text-gray-900">PRICE LIST</h3>
@@ -570,24 +638,26 @@ const BoatDetails = () => {
                   </div>
                 )}
               </div>
-            </div>
-
-            {/* Pricing */}
-            <div className="space-y-2 sm:space-y-3 md:space-y-4 w-full">
-              <div>
-                <p className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 mb-0.5 sm:mb-1 break-words">
-                  {boat.monthlyPrice}/MO
-                </p>
-                <p className="text-sm sm:text-base md:text-lg lg:text-xl text-gray-600 break-words">TOTAL {boat.totalPrice}</p>
-              </div>
-              <Button
-                size="lg"
-                className="w-full bg-gray-900 hover:bg-gray-800 text-white py-2.5 sm:py-3 md:py-4 lg:py-6 text-xs sm:text-sm md:text-base lg:text-lg font-semibold flex items-center justify-center gap-2"
-                onClick={() => window.open("tel:0617152595", "_self")}
-              >
-                <Phone className="h-3.5 w-3.5 sm:h-4 sm:w-4 md:h-5 md:w-5 flex-shrink-0" />
-                <span>CALL FOR PRICE</span>
-              </Button>
+              
+              {/* Scroll Indicator */}
+              {canScroll && (
+                <div className="mt-4 flex flex-col items-center gap-2">
+                  {/* Scroll progress bar */}
+                  <div className="w-full max-w-md h-1 bg-gray-200 rounded-full overflow-hidden">
+                    <div 
+                      className="h-full bg-gray-900 transition-all duration-300 ease-out rounded-full"
+                      style={{ width: `${scrollProgress}%` }}
+                    />
+                  </div>
+                  
+                  {/* Scroll hint text */}
+                  <p className="text-xs text-gray-500 flex items-center gap-1">
+                    <ChevronLeft className="h-3 w-3" />
+                    <span>Swipe to see more</span>
+                    <ChevronRight className="h-3 w-3" />
+                  </p>
+                </div>
+              )}
             </div>
 
             {/* Description */}

@@ -212,7 +212,7 @@ Please contact the customer to provide a quote.
           <div className="flex justify-center mb-4">
             <Ship className="h-16 w-16 text-primary" />
           </div>
-          <h2 className="text-4xl md:text-5xl font-bold mb-6 text-foreground font-spartan">
+          <h2 className="text-4xl md:text-5xl font-bold mb-6 text-foreground font-spartan" style={{ fontSize: 'clamp(2rem, 7vw, 70px)' }}>
             Book Your <span className="bg-gradient-ocean bg-clip-text text-transparent">Yacht Experience</span>
           </h2>
           <p className="text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed">

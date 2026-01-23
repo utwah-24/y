@@ -2,36 +2,36 @@ import React from 'react';
 import { cn } from '@/lib/utils';
 import { useScrollAnimation } from '@/hooks/use-scroll-animation';
 
-interface AnimatedSectionProps {
+interface AnimatedItemProps {
   children: React.ReactNode;
   className?: string;
-  animation?: 'fadeInUp' | 'fadeInLeft' | 'fadeInRight' | 'fadeIn';
   delay?: number;
   duration?: number;
+  animation?: 'fadeInUp' | 'fadeInLeft' | 'fadeInRight' | 'fadeIn';
 }
 
-const AnimatedSection: React.FC<AnimatedSectionProps> = ({
+const AnimatedItem: React.FC<AnimatedItemProps> = ({
   children,
   className,
-  animation = 'fadeInUp',
   delay = 0,
-  duration = 800,
+  duration = 600,
+  animation = 'fadeInUp',
 }) => {
   const { ref, isVisible } = useScrollAnimation({
-    rootMargin: '0px 0px -150px 0px',
+    rootMargin: '0px 0px -100px 0px',
     threshold: 0.1,
   });
 
   const animationClasses = {
     fadeInUp: isVisible 
       ? 'opacity-100 translate-y-0' 
-      : 'opacity-0 translate-y-12',
+      : 'opacity-0 translate-y-8',
     fadeInLeft: isVisible 
       ? 'opacity-100 translate-x-0' 
-      : 'opacity-0 -translate-x-12',
+      : 'opacity-0 -translate-x-8',
     fadeInRight: isVisible 
       ? 'opacity-100 translate-x-0' 
-      : 'opacity-0 translate-x-12',
+      : 'opacity-0 translate-x-8',
     fadeIn: isVisible 
       ? 'opacity-100' 
       : 'opacity-0',
@@ -56,5 +56,5 @@ const AnimatedSection: React.FC<AnimatedSectionProps> = ({
   );
 };
 
-export default AnimatedSection;
+export default AnimatedItem;
 

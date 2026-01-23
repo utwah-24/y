@@ -124,8 +124,8 @@ const Locations = () => {
       <div className="container mx-auto px-4">
         {/* Main Locations */}
         <div className="text-center mb-16">
-          <h2 className="text-4xl md:text-5xl font-bold mb-6 text-foreground font-spartan">
-            Charter <span className="bg-gradient-ocean bg-clip-text text-transparent">Packages</span>
+          <h2 className="text-4xl md:text-5xl font-black mb-6 text-foreground font-quicksand" style={{ fontSize: 'clamp(2rem, 7vw, 70px)' }}>
+            Charter <span className="bg-gradient-ocean bg-clip-text text-transparent font-quicksand">Packages</span>
           </h2>
           <p className="text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed">
             Operating from two stunning locations across Tanzania, we provide easy access to 
@@ -142,7 +142,7 @@ const Locations = () => {
               >
                 <div className="absolute inset-0 bg-gradient-hero"></div>
                 <div className="absolute top-4 left-4 text-white">
-                  <h3 className="text-2xl font-bold">{location.title}</h3>
+                  <h3 className="text-2xl font-bold font-quicksand">{location.title}</h3>
                   <p className="text-white/80 flex items-center gap-1 mt-1">
                     <MapPin className="h-4 w-4" />
                     {location.baseLocation}

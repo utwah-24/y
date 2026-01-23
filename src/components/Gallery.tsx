@@ -88,7 +88,7 @@ const Gallery = () => {
           <div className="inline-flex items-center gap-2 mb-4">
             <Camera className="h-8 w-8 text-primary" />
           </div>
-          <h2 className="text-4xl md:text-6xl font-bold mb-4 bg-gradient-ocean bg-clip-text text-transparent font-spartan">
+          <h2 className="text-4xl md:text-6xl font-bold mb-4 bg-gradient-ocean bg-clip-text text-transparent font-quicksand" style={{ fontSize: 'clamp(2rem, 7vw, 70px)' }}>
             Experience Our Yachts
           </h2>
           <p className="text-lg md:text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed">

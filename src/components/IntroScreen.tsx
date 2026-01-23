@@ -34,7 +34,7 @@ const IntroScreen = ({ onComplete }: { onComplete: () => void }) => {
         </div>
 
         {/* Text below illustration */}
-        <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-gray-950 tracking-wide animate-fade-in font-spartan">
+        <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-gray-950 tracking-wide animate-fade-in font-quicksand" style={{ fontSize: 'clamp(2rem, 7vw, 70px)' }}>
           YATCH DEALERS TZ
         </h1>
       </div>

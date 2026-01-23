@@ -21,9 +21,9 @@ const Hero = () => {
 
       {/* Content */}
       <div className="relative z-10 text-center text-white px-4 max-w-4xl">
-        <h1 className="text-5xl md:text-7xl font-bold mb-6 leading-tight font-spartan">
+        <h1 className="text-5xl md:text-7xl font-bold mb-6 leading-tight font-quicksand" style={{ fontSize: 'clamp(2.5rem, 8vw, 80px)' }}>
           Luxury Yacht
-          <span className="block bg-gradient-ocean bg-clip-text text-transparent">
+          <span className="block bg-gradient-ocean bg-clip-text text-transparent font-quicksand">
             Adventures
           </span>
         </h1>
