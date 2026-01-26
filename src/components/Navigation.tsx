@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Menu, X, Anchor } from "lucide-react";
+import { Menu, X } from "lucide-react";
+import logoImage from "@/assets/small-logo.jpeg";
 
 const Navigation = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -18,7 +19,11 @@ const Navigation = () => {
       <div className="container mx-auto px-4 h-16 flex items-center justify-between">
         {/* Logo */}
         <div className="flex items-center space-x-2">
-          <Anchor className="h-8 w-8 text-primary" />
+          <img 
+            src={logoImage} 
+            alt="Yacht Dealers Tanzania" 
+            className="h-8 w-8 object-contain"
+          />
           <span className="text-xl font-bold text-primary font-quicksand">Yachtdealers.tz</span>
         </div>
 

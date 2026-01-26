@@ -1,7 +1,7 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Share2, Printer, ChevronLeft, ChevronRight } from "lucide-react";
+import { Share2, Printer, ChevronLeft, ChevronRight, Link2 } from "lucide-react";
 import { getBoatById } from "@/utils/boats";
 import bookingImage1 from "@/assets/booking_image1.jpeg";
 import bookingImage2 from "@/assets/booking_image2.jpeg";
@@ -457,16 +457,20 @@ const BoatDetails = () => {
   }
 
   const handleShare = () => {
-    if (navigator.share) {
-      navigator.share({
-        title: boat.name,
-        text: boat.description,
-        url: window.location.href,
-      });
-    } else {
-      navigator.clipboard.writeText(window.location.href);
+    const currentUrl = window.location.href;
+    navigator.clipboard.writeText(currentUrl).then(() => {
+      // Show a brief notification
       alert("Link copied to clipboard!");
-    }
+    }).catch(() => {
+      // Fallback for older browsers
+      const textArea = document.createElement("textarea");
+      textArea.value = currentUrl;
+      document.body.appendChild(textArea);
+      textArea.select();
+      document.execCommand("copy");
+      document.body.removeChild(textArea);
+      alert("Link copied to clipboard!");
+    });
   };
 
   const handlePrint = () => {
@@ -647,21 +651,10 @@ const BoatDetails = () => {
                 size="sm"
                 onClick={handleShare}
                 className="flex items-center justify-center gap-0 md:gap-2 text-xs sm:text-sm px-2.5 sm:px-3 py-1.5 sm:py-2 h-8 sm:h-9 md:h-auto w-8 sm:w-9 md:w-auto aspect-square sm:aspect-auto"
-                aria-label="Share"
+                aria-label="Copy link"
               >
-                <Share2 className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                <span className="hidden md:inline">SHARE</span>
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleShare}
-                className="flex items-center gap-1 sm:gap-1.5 md:gap-2 text-xs sm:text-sm px-2.5 sm:px-3 py-1.5 sm:py-2 h-8 sm:h-9 md:h-auto"
-                aria-label="Share with friends"
-              >
-                <Share2 className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                <span className="hidden lg:inline">SHARE WITH FRIENDS</span>
-                <span className="lg:hidden">SHARE</span>
+                <Link2 className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                <span className="hidden md:inline">COPY LINK</span>
               </Button>
               <Button
                 variant="outline"

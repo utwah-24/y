@@ -10,7 +10,8 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { MapPin, Navigation, Clock, Anchor, Waves, Compass, Route, Sparkles, CheckCircle2 } from "lucide-react";
-import bongoyo from "@/assets/bongoyo-island.jpg";
+import islandDay from "@/assets/Island-day.jpeg";
+import zanzibarImage from "@/assets/Zanzibar.jpeg";
 
 const Locations = () => {
   const [selectedLocation, setSelectedLocation] = useState<number | null>(null);
@@ -58,7 +59,7 @@ const Locations = () => {
           highlight: "Exclusive private beach experience"
         }
       ],
-      image: bongoyo,
+      image: islandDay,
       totalDuration: "4-6 hours",
       bestFor: "Half Day & Full Day Charters"
     },
@@ -113,7 +114,7 @@ const Locations = () => {
           highlight: "Best sunset spot in Zanzibar"
         }
       ],
-      image: bongoyo,
+      image: zanzibarImage,
       totalDuration: "6-8 hours",
       bestFor: "Full Day & Extended Charters"
     }
@@ -140,7 +141,7 @@ const Locations = () => {
                 className="h-64 bg-cover bg-center relative"
                 style={{ backgroundImage: `url(${location.image})` }}
               >
-                <div className="absolute inset-0 bg-gradient-hero"></div>
+                <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-black/40 to-black/50"></div>
                 <div className="absolute top-4 left-4 text-white">
                   <h3 className="text-2xl font-bold font-quicksand">{location.title}</h3>
                   <p className="text-white/80 flex items-center gap-1 mt-1">

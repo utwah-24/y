@@ -2,7 +2,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Shield, Anchor, Heart, Award, CalendarClock } from "lucide-react";
 import { Link } from "react-router-dom";
-import yachtCrew from "@/assets/yacht-crew.jpg";
+import crewImage from "@/assets/crew.jpg";
 
 const Team = () => {
   const teamValues = [
@@ -50,9 +50,9 @@ const Team = () => {
           <Card className="overflow-hidden border-0 bg-card/80 backdrop-blur-sm shadow-luxury">
             <div 
               className="h-96 bg-cover bg-center relative"
-              style={{ backgroundImage: `url(${yachtCrew})` }}
+              style={{ backgroundImage: `url(${crewImage})` }}
             >
-              <div className="absolute inset-0 bg-gradient-hero"></div>
+              <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/60 to-black/70"></div>
               <div className="absolute inset-0 flex items-center justify-center text-center text-white p-8">
                 <div>
                   <h3 className="text-3xl md:text-4xl font-bold mb-4">
