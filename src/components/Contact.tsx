@@ -21,7 +21,7 @@ const Contact = () => {
     {
       icon: <CreditCard className="h-6 w-6" />,
       title: "Vodacom Payment",
-      details: "5998989",
+      details: "50212457",
       description: "Secure mobile money payments",
       action: null
     }

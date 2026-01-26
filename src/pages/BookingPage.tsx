@@ -20,6 +20,7 @@ import yachtImage from "@/assets/yatch-image.jpg";
 import bookingImage1 from "@/assets/booking_image1.jpeg";
 import bookingImage2 from "@/assets/booking_image2.jpeg";
 import bookingImage3 from "@/assets/booking_image3 .jpeg";
+import { getAllBoats } from "@/utils/boats";
 
 // Charter pricing data
 const charterOptions = [
@@ -35,7 +36,7 @@ const charterOptions = [
         ],
       },
       {
-        yacht: "25 Max Catamaran",
+        yacht: "22 Max Catamaran",
         options: [
           { type: "Half Day Cruise", price: "$1,500" },
           { type: "Full Day Cruise", price: "$2,000" },
@@ -56,7 +57,7 @@ const charterOptions = [
         ],
       },
       {
-        yacht: "25 Max Catamaran",
+        yacht: "22 Max Catamaran",
         options: [
           { type: "Half Day Cruise", price: "$1,800" },
           { type: "Full Day Cruise", price: "$2,400" },
@@ -78,11 +79,85 @@ const bookingSchema = z.object({
   drinks: z.array(z.string()).min(1, "Please select at least one drink option"),
   dj: z.boolean(),
   catamaran: z.string().optional(),
+  allergies: z.string().optional(),
+  specialOccasion: z.string().optional(),
 });
 
 type BookingForm = z.infer<typeof bookingSchema>;
 
 const bookingImages = [yachtImage, bookingImage1, bookingImage2, bookingImage3];
+
+const yachtTypes = ["20 Max Catamaran", "22 Max Catamaran"];
+
+// Boat metadata for capacity and description
+const boatMetadata: Record<string, { capacity: string; description: string }> = {
+  "misbehaviour-catamaran": {
+    capacity: "20 passengers",
+    description: "20 passengers max, perfect for private cruises.",
+  },
+  "sunday-kinga": {
+    capacity: "22 passengers",
+    description: "22-passengers, ideal for group celebrations.",
+  },
+  "umoja": {
+    capacity: "22 passengers",
+    description: "22-passengers, comfortable for full-day trips.",
+  },
+  "albion-catamaran": {
+    capacity: "20 passengers",
+    description: "Premium catamaran with excellent facilities.",
+  },
+  "amani-luxury": {
+    capacity: "25 passengers",
+    description: "Luxury catamaran with premium amenities.",
+  },
+  "black-bird-heli": {
+    capacity: "4 passengers",
+    description: "Helicopter service for aerial tours and transfers.",
+  },
+  "butterfly-catamaran": {
+    capacity: "22 passengers",
+    description: "Elegant catamaran perfect for special occasions.",
+  },
+  "helia-44-catamaran": {
+    capacity: "24 passengers",
+    description: "Spacious 44-foot catamaran for comfortable cruising.",
+  },
+  "knlyps-catamaran": {
+    capacity: "20 passengers",
+    description: "Modern catamaran with excellent facilities.",
+  },
+  "queen-of-zanzibar": {
+    capacity: "25 passengers",
+    description: "Royal catamaran experience in Zanzibar waters.",
+  },
+  "seamanta-catamaran": {
+    capacity: "22 passengers",
+    description: "Comfortable catamaran for day trips.",
+  },
+  "vaatea-catamaran": {
+    capacity: "24 passengers",
+    description: "Luxury catamaran with premium features.",
+  },
+};
+
+// Generate catalog from all boats
+const generateCatamaranCatalog = () => {
+  const allBoats = getAllBoats();
+  return allBoats.map((boat) => {
+    const metadata = boatMetadata[boat.id] || {
+      capacity: "20 passengers",
+      description: "Premium catamaran for your charter experience.",
+    };
+    return {
+      id: boat.id,
+      name: boat.name,
+      description: `Description: ${metadata.description}`,
+      capacity: metadata.capacity,
+      image: boat.image,
+    };
+  });
+};
 
 const BookingPage = () => {
   const { toast } = useToast();
@@ -95,6 +170,7 @@ const BookingPage = () => {
   const [selectedCharterType, setSelectedCharterType] = useState<string>("");
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [selectedCatamaranId, setSelectedCatamaranId] = useState<string | null>(null);
+  const catamaranCatalog = generateCatamaranCatalog();
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -120,6 +196,8 @@ const BookingPage = () => {
       charter: "",
       passengers: "2",
       catamaran: "",
+      allergies: "",
+      specialOccasion: "",
     },
   });
 
@@ -150,32 +228,6 @@ const BookingPage = () => {
     { value: "bongoyo", label: "Bongoyo Island" },
     { value: "mbudya", label: "Mbudya Island" },
   ];
-
-const yachtTypes = ["20 Max Catamaran", "25 Max Catamaran"];
-
-const catamaranCatalog = [
-  {
-    id: "misbehavior",
-    name: "MISBEHAVIOR CATAMARAN",
-    description: "Description: 20 passengers max, perfect for private cruises.",
-    capacity: "20 passengers",
-    image: bookingImage1,
-  },
-  {
-    id: "sunday-kinga",
-    name: "SUNDAY KINGA CATAMARAN",
-    description: "Description: 22-passengers, ideal for group celebrations.",
-    capacity: "22 passengers",
-    image: bookingImage2,
-  },
-  {
-    id: "umoja-1",
-    name: "UMOJA CATAMARAN 1",
-    description: "Description: 22-passengers, comfortable for full-day trips.",
-    capacity: "22 passengers",
-    image: bookingImage3,
-  },
-];
 
   // Get prices for selected yacht
   const getYachtPrices = (yachtType: string) => {
@@ -227,11 +279,14 @@ const catamaranCatalog = [
         setStep(2);
       }
     } else if (step === 2) {
-      // Step 2: validate catalog-related choices before summary
+      // Step 2: validate catalog-related choices
       const isValid = await trigger(["destination", "charter", "food", "drinks"]);
       if (isValid) {
         setStep(3);
       }
+    } else if (step === 3) {
+      // Step 3: Personal Request (no validation needed, optional fields)
+      setStep(4);
     }
   };
 
@@ -287,6 +342,9 @@ ${data.drinks.join(", ")}
 
 🎵 *DJ Service:* ${data.dj ? "Yes ✓" : "No"}
 
+${data.allergies ? `⚠️ *Allergies:*\n${data.allergies}\n` : ""}
+${data.specialOccasion ? `🎉 *Special Occasion:*\n${data.specialOccasion}\n` : ""}
+
 Please contact the customer to provide a quote.
     `.trim();
 
@@ -320,33 +378,7 @@ Please contact the customer to provide a quote.
                 <div className={`h-2 flex-1 rounded-full transition-all ${step >= 1 ? "bg-gray-900" : "bg-gray-300"}`}></div>
                 <div className={`h-2 flex-1 rounded-full transition-all ${step >= 2 ? "bg-gray-900" : "bg-gray-300"}`}></div>
                 <div className={`h-2 flex-1 rounded-full transition-all ${step >= 3 ? "bg-gray-900" : "bg-gray-300"}`}></div>
-              </div>
-            </div>
-
-            {/* Mobile Slideshow - shown only on small screens */}
-            <div className="mb-8 lg:hidden">
-              <div className="relative rounded-3xl overflow-hidden shadow-xl bg-gradient-to-br from-gray-100/60 via-gray-100/60 to-gray-50">
-                <div className="absolute -inset-6 bg-gradient-to-r from-gray-400/20 via-gray-400/20 to-gray-400/20 blur-3xl"></div>
-                <div className="relative p-4">
-                  <div className="relative rounded-2xl overflow-hidden shadow-2xl w-full aspect-[16/9]">
-                    <img
-                      src={bookingImages[currentImageIndex]}
-                      alt="Luxury Yacht"
-                      className="w-full h-full object-cover transition-opacity duration-700"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/15 via-transparent to-transparent"></div>
-                  </div>
-
-                  {/* Small badges for mobile */}
-                  <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm rounded-full px-3 py-1 shadow-md flex items-center gap-2">
-                    <Sparkles className="w-3 h-3 text-gray-900" />
-                    <span className="text-xs font-semibold text-gray-800">Luxury Experience</span>
-                  </div>
-                  <div className="absolute bottom-4 left-4 bg-white/90 backdrop-blur-sm rounded-full px-3 py-1 shadow-md flex items-center gap-2">
-                    <Ship className="w-3 h-3 text-gray-900" />
-                    <span className="text-xs font-semibold text-gray-800">Premium Fleet</span>
-                  </div>
-                </div>
+                <div className={`h-2 flex-1 rounded-full transition-all ${step >= 4 ? "bg-gray-900" : "bg-gray-300"}`}></div>
               </div>
             </div>
 
@@ -774,10 +806,75 @@ Please contact the customer to provide a quote.
                   </form>
                 </div>
 
-                {/* Step 3: Order Summary */}
+                {/* Step 3: Personal Request */}
                 <div
                   className={`transition-all duration-500 ease-in-out ${
                     step === 3
+                      ? "opacity-100 translate-x-0"
+                      : "opacity-0 translate-x-full absolute inset-0 pointer-events-none"
+                  }`}
+                >
+                  <form className="space-y-6">
+                    <div className="space-y-1">
+                      <h2 className="text-xl font-semibold text-gray-900 font-spartan">Personal Request</h2>
+                      <p className="text-sm text-gray-500">
+                        Share any special requirements or preferences for your booking.
+                      </p>
+                    </div>
+
+                    {/* Allergies */}
+                    <div className="space-y-2">
+                      <Label htmlFor="allergies" className="text-gray-700 font-medium">
+                        What are your allergies?
+                      </Label>
+                      <Input
+                        id="allergies"
+                        placeholder="E.g., Nuts, Shellfish, Dairy"
+                        {...register("allergies")}
+                        className="bg-white border-gray-200"
+                      />
+                    </div>
+
+                    {/* Special Occasion */}
+                    <div className="space-y-2">
+                      <Label htmlFor="specialOccasion" className="text-gray-700 font-medium">
+                        Special occasion
+                      </Label>
+                      <Input
+                        id="specialOccasion"
+                        placeholder="E.g., Valentines, Birthday, Anniversary"
+                        {...register("specialOccasion")}
+                        className="bg-white border-gray-200"
+                      />
+                    </div>
+
+                    {/* Action Buttons */}
+                    <div className="flex gap-4">
+                      <Button
+                        type="button"
+                        onClick={handleBack}
+                        variant="outline"
+                        className="flex-1 rounded-full py-6 text-lg font-medium border-gray-300"
+                      >
+                        <ChevronLeft className="mr-2 h-5 w-5" />
+                        Back
+                      </Button>
+                      <Button
+                        type="button"
+                        onClick={handleNext}
+                        className="flex-1 bg-gray-900 hover:bg-gray-800 text-white rounded-full py-6 text-lg font-medium"
+                      >
+                        Next
+                        <ChevronRight className="ml-2 h-5 w-5" />
+                      </Button>
+                    </div>
+                  </form>
+                </div>
+
+                {/* Step 4: Order Summary */}
+                <div
+                  className={`transition-all duration-500 ease-in-out ${
+                    step === 4
                       ? "opacity-100 translate-x-0"
                       : "opacity-0 translate-x-full absolute inset-0 pointer-events-none"
                   }`}
@@ -843,6 +940,23 @@ Please contact the customer to provide a quote.
                         DJ service: {watched.dj ? "Yes" : "No"}
                       </p>
                     </div>
+
+                    {/* Personal Requests */}
+                    {(watched.allergies || watched.specialOccasion) && (
+                      <div className="rounded-2xl bg-white p-4 shadow-sm space-y-2">
+                        <h3 className="text-sm font-semibold text-gray-900">Personal Requests</h3>
+                        {watched.allergies && (
+                          <p className="text-sm text-gray-700">
+                            Allergies: {watched.allergies}
+                          </p>
+                        )}
+                        {watched.specialOccasion && (
+                          <p className="text-sm text-gray-700">
+                            Special Occasion: {watched.specialOccasion}
+                          </p>
+                        )}
+                      </div>
+                    )}
 
                     {/* Actions */}
                     <div className="flex gap-4 pt-2">
