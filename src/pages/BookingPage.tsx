@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useLocation } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -78,6 +79,8 @@ const bookingSchema = z.object({
   food: z.array(z.string()).min(1, "Please select at least one food option"),
   drinks: z.array(z.string()).min(1, "Please select at least one drink option"),
   dj: z.boolean(),
+  activities: z.array(z.string()).optional(),
+  otherActivity: z.string().optional(),
   catamaran: z.string().optional(),
   allergies: z.string().optional(),
   specialOccasion: z.string().optional(),
@@ -161,9 +164,11 @@ const generateCatamaranCatalog = () => {
 
 const BookingPage = () => {
   const { toast } = useToast();
+  const locationRouter = useLocation();
   const [step, setStep] = useState(1);
   const [selectedFood, setSelectedFood] = useState<string[]>([]);
   const [selectedDrinks, setSelectedDrinks] = useState<string[]>([]);
+  const [selectedActivities, setSelectedActivities] = useState<string[]>([]);
   const [djEnabled, setDjEnabled] = useState(false);
   const [selectedYacht, setSelectedYacht] = useState<string>("");
   const [selectedLocation, setSelectedLocation] = useState<string>("");
@@ -193,6 +198,8 @@ const BookingPage = () => {
       dj: false,
       food: [],
       drinks: [],
+      activities: [],
+      otherActivity: "",
       charter: "",
       passengers: "2",
       catamaran: "",
@@ -221,12 +228,21 @@ const BookingPage = () => {
     "Beer & Spirits",
   ];
 
+  const activityOptions = [
+    "Sunbathing and relaxation",
+    "Water sports (e.g., snorkeling, diving, paddleboarding)",
+    "Dining at exclusive restaurants",
+    "Private beach excursions",
+    "Cultural experiences (e.g., visits to local villages, markets)",
+    "Wine tasting and luxury dining onboard",
+    "Family-friendly activities (e.g., kids’ clubs, educational tours)",
+    "Romantic getaways (e.g., private dinners, sunset cruises)",
+    "Other",
+  ];
+
   const destinations = [
     { value: "dar-slipway", label: "Dar es Salaam - Slipway Marina" },
     { value: "zanzibar-stonetown", label: "Zanzibar - Stone Town" },
-    { value: "nungwi", label: "Nungwi Beach" },
-    { value: "bongoyo", label: "Bongoyo Island" },
-    { value: "mbudya", label: "Mbudya Island" },
   ];
 
   // Get prices for selected yacht
@@ -240,6 +256,19 @@ const BookingPage = () => {
   };
 
   const yachtPrices = selectedYacht ? getYachtPrices(selectedYacht) : { dar: [], zanzibar: [] };
+
+  // Preselect catamaran when coming from BoatDetails via query param
+  useEffect(() => {
+    const params = new URLSearchParams(locationRouter.search);
+    const catamaranFromQuery = params.get("catamaran");
+    if (catamaranFromQuery && !selectedCatamaranId) {
+      const found = catamaranCatalog.find((item) => item.id === catamaranFromQuery);
+      if (found) {
+        setSelectedCatamaranId(found.id);
+        setValue("catamaran", found.name);
+      }
+    }
+  }, [locationRouter.search, catamaranCatalog, selectedCatamaranId, setValue]);
 
   const handleYachtSelect = (yacht: string) => {
     setSelectedYacht(yacht);
@@ -269,6 +298,14 @@ const BookingPage = () => {
       : selectedDrinks.filter((d) => d !== drink);
     setSelectedDrinks(updated);
     setValue("drinks", updated);
+  };
+
+  const handleActivitiesChange = (activity: string, checked: boolean) => {
+    const updated = checked
+      ? [...selectedActivities, activity]
+      : selectedActivities.filter((a) => a !== activity);
+    setSelectedActivities(updated);
+    setValue("activities", updated);
   };
 
   const handleNext = async () => {
@@ -314,6 +351,15 @@ const BookingPage = () => {
       ? `\n🚤 *Selected Catamaran:*\n${data.catamaran}\n`
       : "";
 
+    const activitiesLine =
+      data.activities && data.activities.length
+        ? `\n🎯 *Preferred Activities:*\n${data.activities.join(", ")}\n`
+        : "";
+
+    const otherActivityLine = data.otherActivity
+      ? `\n📝 *Other Activity Preferences:*\n${data.otherActivity}\n`
+      : "";
+
     // Format WhatsApp message
     const message = `
 🛥️ *NEW YACHT BOOKING REQUEST*
@@ -344,6 +390,8 @@ ${data.drinks.join(", ")}
 
 ${data.allergies ? `⚠️ *Allergies:*\n${data.allergies}\n` : ""}
 ${data.specialOccasion ? `🎉 *Special Occasion:*\n${data.specialOccasion}\n` : ""}
+${activitiesLine}
+${otherActivityLine}
 
 Please contact the customer to provide a quote.
     `.trim();
@@ -491,7 +539,9 @@ Please contact the customer to provide a quote.
                 >
                   <form className="space-y-6">
                     <div className="space-y-1">
-                      <h2 className="text-xl font-semibold text-gray-900 font-spartan">Yacht Catalog</h2>
+                      <h2 className="text-xl font-semibold text-gray-900 font-spartan">
+                        {selectedCatamaranId === "black-bird-heli" ? "Helicopter Catalog" : "Yacht Catalog"}
+                      </h2>
                       <p className="text-sm text-gray-500">
                         Choose a catamaran and configure your experience.
                       </p>
@@ -522,11 +572,6 @@ Please contact the customer to provide a quote.
                                 <p className="text-xs text-gray-500 truncate">
                                   {item.description}
                                 </p>
-                              </div>
-                            </div>
-                            <div className="ml-3">
-                              <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-xl font-semibold text-gray-700">
-                                +
                               </div>
                             </div>
                           </button>
@@ -822,6 +867,71 @@ Please contact the customer to provide a quote.
                       </p>
                     </div>
 
+                    {/* Activities / Experiences */}
+                    <div className="space-y-3">
+                      <Label className="text-gray-700 font-medium">
+                        What activities or experiences are important to you during your charter?
+                      </Label>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <div className="space-y-3">
+                          {activityOptions.slice(0, 4).map((activity) => (
+                            <div
+                              key={activity}
+                              className="flex items-center space-x-2 p-3 rounded-lg bg-white hover:bg-gray-50 transition-colors"
+                            >
+                              <Checkbox
+                                id={activity}
+                                checked={selectedActivities.includes(activity)}
+                                onCheckedChange={(checked) =>
+                                  handleActivitiesChange(activity, checked as boolean)
+                                }
+                              />
+                              <Label
+                                htmlFor={activity}
+                                className="text-sm text-gray-700 cursor-pointer flex-1"
+                              >
+                                {activity}
+                              </Label>
+                            </div>
+                          ))}
+                        </div>
+                        <div className="space-y-3">
+                          {activityOptions.slice(4, 8).map((activity) => (
+                            <div
+                              key={activity}
+                              className="flex items-center space-x-2 p-3 rounded-lg bg-white hover:bg-gray-50 transition-colors"
+                            >
+                              <Checkbox
+                                id={activity}
+                                checked={selectedActivities.includes(activity)}
+                                onCheckedChange={(checked) =>
+                                  handleActivitiesChange(activity, checked as boolean)
+                                }
+                              />
+                              <Label
+                                htmlFor={activity}
+                                className="text-sm text-gray-700 cursor-pointer flex-1"
+                              >
+                                {activity}
+                              </Label>
+                            </div>
+                          ))}
+                          {/* Other activity text field */}
+                          <div className="space-y-2">
+                            <Label htmlFor="otherActivity" className="text-sm text-gray-700 font-medium">
+                              Other (please specify)
+                            </Label>
+                            <Input
+                              id="otherActivity"
+                              placeholder="Tell us about any other activities you’d like"
+                              {...register("otherActivity")}
+                              className="bg-white border-gray-200"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
                     {/* Allergies */}
                     <div className="space-y-2">
                       <Label htmlFor="allergies" className="text-gray-700 font-medium">
@@ -939,6 +1049,16 @@ Please contact the customer to provide a quote.
                       <p className="text-sm text-gray-700">
                         DJ service: {watched.dj ? "Yes" : "No"}
                       </p>
+                      {(watched.activities && watched.activities.length > 0) && (
+                        <p className="text-sm text-gray-700">
+                          Preferred activities: {watched.activities.join(", ")}
+                        </p>
+                      )}
+                      {watched.otherActivity && (
+                        <p className="text-sm text-gray-700">
+                          Other activity preferences: {watched.otherActivity}
+                        </p>
+                      )}
                     </div>
 
                     {/* Personal Requests */}

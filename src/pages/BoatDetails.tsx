@@ -656,16 +656,6 @@ const BoatDetails = () => {
                 <Link2 className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                 <span className="hidden md:inline">COPY LINK</span>
               </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handlePrint}
-                className="hidden md:flex items-center gap-2 text-sm px-3 py-2"
-                aria-label="Print"
-              >
-                <Printer className="h-4 w-4" />
-                <span>PRINT</span>
-              </Button>
             </div>
 
             {/* Boat Title */}
@@ -687,11 +677,6 @@ const BoatDetails = () => {
               </span>
               {boat.status === "PENDING" && (
                 <span className="inline-flex items-center px-2 sm:px-2.5 md:px-3 py-0.5 sm:py-1 bg-orange-100 text-orange-800 rounded-full text-xs sm:text-sm font-medium whitespace-nowrap">
-                  {boat.status}
-                </span>
-              )}
-              {boat.status === "IN STOCK" && (
-                <span className="inline-flex items-center px-2 sm:px-2.5 md:px-3 py-0.5 sm:py-1 bg-green-100 text-green-800 rounded-full text-xs sm:text-sm font-medium whitespace-nowrap">
                   {boat.status}
                 </span>
               )}
@@ -816,6 +801,16 @@ const BoatDetails = () => {
             <div className="pt-3 sm:pt-4 border-t border-gray-200 w-full">
               <h3 className="text-sm sm:text-base md:text-lg font-semibold text-gray-900 mb-1.5 sm:mb-2">Description</h3>
               <p className="text-xs sm:text-sm md:text-base text-gray-600 leading-relaxed break-words">{boat.description}</p>
+            </div>
+
+            {/* Book Now Button */}
+            <div className="pt-3 sm:pt-4 w-full">
+              <Button
+                className="w-full sm:w-auto bg-gray-900 hover:bg-gray-800 text-white rounded-full px-6 py-3 text-sm sm:text-base font-semibold"
+                onClick={() => navigate(`/booking?catamaran=${encodeURIComponent(boat.id)}`)}
+              >
+                Book now
+              </Button>
             </div>
           </div>
         </div>
