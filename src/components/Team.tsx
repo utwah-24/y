@@ -33,7 +33,7 @@ const Team = () => {
   ];
 
   return (
-    <section id="team" className="py-20 bg-muted/30">
+    <section id="team" className="pt-16 sm:pt-20 md:pt-24 lg:pt-32 pb-20 bg-muted/30">
       <div className="container mx-auto px-4">
         <div className="text-center mb-16">
           <h2 className="text-4xl md:text-5xl font-bold mb-6 text-foreground font-quicksand" style={{ fontSize: 'clamp(2rem, 7vw, 71px)' }}>

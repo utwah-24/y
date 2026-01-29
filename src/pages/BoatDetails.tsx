@@ -471,15 +471,15 @@ const BoatDetails = () => {
       .writeText(currentUrl)
       .then(showCopiedFeedback)
       .catch(() => {
-        // Fallback for older browsers
-        const textArea = document.createElement("textarea");
-        textArea.value = currentUrl;
-        document.body.appendChild(textArea);
-        textArea.select();
-        document.execCommand("copy");
-        document.body.removeChild(textArea);
+      // Fallback for older browsers
+      const textArea = document.createElement("textarea");
+      textArea.value = currentUrl;
+      document.body.appendChild(textArea);
+      textArea.select();
+      document.execCommand("copy");
+      document.body.removeChild(textArea);
         showCopiedFeedback();
-      });
+    });
   };
 
   const handleBookNow = () => {
@@ -668,7 +668,7 @@ const BoatDetails = () => {
                 {linkCopied ? (
                   <Check className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                 ) : (
-                  <Link2 className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                <Link2 className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                 )}
                 <span className="hidden md:inline">{linkCopied ? "COPIED" : "COPY LINK"}</span>
               </Button>

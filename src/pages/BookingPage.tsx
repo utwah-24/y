@@ -72,12 +72,12 @@ const charterOptions = [
 const bookingSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
   phone: z.string().min(10, "Please enter a valid phone number"),
-  destination: z.string().min(1, "Please select a destination"),
+  destination: z.string().optional(),
   charter: z.string().min(1, "Please select a charter package"),
   date: z.string().min(1, "Please select a date"),
   passengers: z.string().min(1, "Please enter number of passengers"),
-  food: z.array(z.string()).min(1, "Please select at least one food option"),
-  drinks: z.array(z.string()).min(1, "Please select at least one drink option"),
+  food: z.array(z.string()).optional(),
+  drinks: z.array(z.string()).optional(),
   dj: z.boolean(),
   activities: z.array(z.string()).optional(),
   otherActivity: z.string().optional(),
@@ -255,11 +255,19 @@ const BookingPage = () => {
   ];
 
   const destinations = [
-    { value: "dar-slipway", label: "Dar es Salaam - Slipway Marina" },
-    { value: "zanzibar-stonetown", label: "Zanzibar - Stone Town" },
-    { value: "nungwi", label: "Nungwi Beach" },
-    { value: "bongoyo", label: "Bongoyo Island" },
-    { value: "mbudya", label: "Mbudya Island" },
+    { value: "slipway-bongoyo", label: "Slipway -bongoyo" },
+    { value: "slipway-mbudya", label: "Slipway-mbudya" },
+    { value: "slipway-fungu-ya-sini", label: "Slipway-fungu ya sini" },
+    { value: "dar-oceean-view", label: "Dar -oceean view" },
+    { value: "zanzibar-prison-island", label: "Zanzibar-prison island" },
+    { value: "zanzibar-nakupenda", label: "Zanzibar -nakupenda" },
+    { value: "zanzibar-oceaan-view", label: "Zanzibar oceaan view" },
+  ];
+
+  // Helicopter-specific pickup points
+  const helicopterPickupPoints = [
+    { value: "seacliff", label: "SEACLIFF" },
+    { value: "seacliff-airport", label: "SEACLIFF/AIRPORT" },
   ];
 
   // Get prices for selected yacht
@@ -284,8 +292,20 @@ const BookingPage = () => {
   const handleCharterSelect = (location: string, charterType: string) => {
     setSelectedLocation(location);
     setSelectedCharterType(charterType);
-    const charterValue = `${location}|${selectedYacht}|${charterType}`;
+    // For helicopter services, don't include yacht in the charter value
+    const charterValue = selectedCatamaranId === "black-bird-heli" 
+      ? `${location}|${charterType}`
+      : `${location}|${selectedYacht}|${charterType}`;
     setValue("charter", charterValue);
+
+    // For helicopter, auto-set pickup point (no dropdown).
+    if (selectedCatamaranId === "black-bird-heli") {
+      const pickupPointValue =
+        charterType === "Dar - Zanzibar (One Way)" || charterType === "Dar-Zanzibar (Two Ways)"
+          ? "seacliff-airport"
+          : "seacliff";
+      setValue("destination", pickupPointValue);
+    }
   };
 
   const handleFoodChange = (food: string, checked: boolean) => {
@@ -321,9 +341,37 @@ const BookingPage = () => {
       }
     } else if (step === 2) {
       // Step 2: validate catalog-related choices
-      const isValid = await trigger(["destination", "charter", "food", "drinks"]);
+      // For helicopter, destination is auto-set, and food/drinks are not required
+      const fieldsToValidate = selectedCatamaranId === "black-bird-heli" 
+        ? ["charter"]
+        : ["destination", "charter"];
+      
+      // Validate required fields
+      const isValid = await trigger(fieldsToValidate);
+      
+      // For non-helicopter, also validate food and drinks manually
+      if (isValid && selectedCatamaranId !== "black-bird-heli") {
+        const foodValid = watched.food && watched.food.length > 0;
+        const drinksValid = watched.drinks && watched.drinks.length > 0;
+        
+        if (!foodValid || !drinksValid) {
+          if (!foodValid) {
+            setValue("food", [], { shouldValidate: true });
+          }
+          if (!drinksValid) {
+            setValue("drinks", [], { shouldValidate: true });
+          }
+          return;
+        }
+      }
+      
       if (isValid) {
-        setStep(3);
+        // Skip Step 3 (Personal Request) for helicopter bookings
+        if (selectedCatamaranId === "black-bird-heli") {
+          setStep(4);
+        } else {
+          setStep(3);
+        }
       }
     } else if (step === 3) {
       // Step 3: Personal Request (no validation needed, optional fields)
@@ -340,13 +388,37 @@ const BookingPage = () => {
     if (found) {
       setSelectedCatamaranId(id);
       setValue("catamaran", found.name);
+
+      // For helicopter, we don't want the user to pick a "Destination" — set a sensible default.
+      if (found.id === "black-bird-heli") {
+        setValue("destination", "seacliff");
+      } else {
+        setValue("destination", "");
+      }
     }
   };
 
+  // Helper function to get helicopter price
+  const getHelicopterPrice = (charterType: string): string => {
+    const prices: Record<string, string> = {
+      "Scenic Flights": "$1,000 (TZS 2,750,000)",
+      "Hour Scenic Flight": "$2,500 (TZS 6,875,000)",
+      "Dar - Zanzibar (One Way)": "$2,700 (TZS 7,425,000)",
+      "Dar-Zanzibar (Two Ways)": "$3,500 (TZS 9,625,000)",
+      "Special Charter": "Price upon Request"
+    };
+    return prices[charterType] || "";
+  };
+
   const onSubmit = (data: BookingForm) => {
-    // Parse charter selection
-    const [location, yacht, charterType] = data.charter.split("|");
-    const selectedCharterOption = charterOptions
+    // Parse charter selection (format differs for helicopter vs yacht)
+    const charterParts = data.charter.split("|");
+    const isHelicopter = selectedCatamaranId === "black-bird-heli";
+    const location = charterParts[0];
+    const yacht = isHelicopter ? "Helicopter" : charterParts[1];
+    const charterType = isHelicopter ? charterParts[1] : charterParts[2];
+    
+    const selectedCharterOption = isHelicopter ? null : charterOptions
       .find((loc) => loc.location === location)
       ?.packages.find((pkg) => pkg.yacht === yacht)
       ?.options.find((opt) => opt.type === charterType);
@@ -369,7 +441,7 @@ const BookingPage = () => {
       note: "\u{1F4DD}", // 📝
       check: "\u{2713}", // ✓
     } as const;
-
+    
     const catamaranLine = data.catamaran
       ? `\n${EMOJI.catamaran} *Selected Catamaran:*\n${data.catamaran}\n`
       : "";
@@ -396,25 +468,21 @@ ${EMOJI.customer} *Customer Details:*
 Name: ${data.name}
 Phone: ${data.phone}
 
-${EMOJI.pin} *Destination:*
-${destinations.find((d) => d.value === data.destination)?.label}
+${EMOJI.pin} *${isHelicopter ? "Pickup Point" : "Destination"}:*
+${isHelicopter 
+  ? helicopterPickupPoints.find((d) => d.value === data.destination)?.label || data.destination
+  : destinations.find((d) => d.value === data.destination)?.label}
 
 ${EMOJI.calendar} *Date:* ${data.date}
 ${EMOJI.people} *Passengers:* ${data.passengers}
 
 ${catamaranLine}
 
-${EMOJI.sailboat} *Selected Charter:*
-${location} - ${yacht}
-${charterType} ${selectedCharterOption ? selectedCharterOption.price : ""}
+${EMOJI.sailboat} *Selected ${isHelicopter ? "Helicopter Service" : "Charter"}:*
+${isHelicopter ? charterType : `${location} - ${yacht}`}
+${isHelicopter ? getHelicopterPrice(charterType) : `${charterType} ${selectedCharterOption ? selectedCharterOption.price : ""}`}
 
-${EMOJI.food} *Food Selection:*
-${data.food.join(", ")}
-
-${EMOJI.drink} *Drinks Selection:*
-${data.drinks.join(", ")}
-
-${EMOJI.music} *DJ Service:* ${data.dj ? `Yes ${EMOJI.check}` : "No"}
+${!isHelicopter ? `${EMOJI.food} *Food Selection:*\n${data.food.join(", ")}\n\n${EMOJI.drink} *Drinks Selection:*\n${data.drinks.join(", ")}\n\n${EMOJI.music} *DJ Service:* ${data.dj ? `Yes ${EMOJI.check}` : "No"}\n` : ""}
 
 ${showAllergies ? `${EMOJI.warning} *Allergies:*\n${allergies}\n` : ""}
 ${showSpecialOccasion ? `${EMOJI.party} *Special Occasion:*\n${specialOccasion}\n` : ""}
@@ -567,9 +635,13 @@ Please contact the customer to provide a quote.
                 >
                   <form className="space-y-6">
                     <div className="space-y-1">
-                      <h2 className="text-xl font-semibold text-gray-900 font-spartan">Yacht Catalog</h2>
+                      <h2 className="text-xl font-semibold text-gray-900 font-spartan">
+                        {selectedCatamaranId === "black-bird-heli" ? "Helicopter" : "Yacht Catalog"}
+                      </h2>
                       <p className="text-sm text-gray-500">
-                        Choose a catamaran and configure your experience.
+                        {selectedCatamaranId === "black-bird-heli" 
+                          ? "Choose a helicopter service and configure your experience."
+                          : "Choose a catamaran and configure your experience."}
                       </p>
                     </div>
 
@@ -625,229 +697,353 @@ Please contact the customer to provide a quote.
                                   <h3 className="text-lg font-semibold text-gray-900">
                                     {item.name}
                                   </h3>
-                                  <p className="text-sm text-gray-600">{item.description}</p>
-                                  <p className="text-sm font-medium text-gray-800">
-                                    Capacity: {item.capacity}
-                                  </p>
+                                  {item.id !== "black-bird-heli" && (
+                                    <>
+                                      <p className="text-sm text-gray-600">{item.description}</p>
+                                      <p className="text-sm font-medium text-gray-800">
+                                        Capacity: {item.capacity}
+                                      </p>
+                                    </>
+                                  )}
                                 </div>
                               </div>
 
-                              {/* Destination */}
-                              <div className="space-y-2">
-                                <Label htmlFor="destination" className="text-gray-700 font-medium">
-                                  Destination *
-                                </Label>
-                                <Select onValueChange={(value) => setValue("destination", value)}>
-                                  <SelectTrigger
-                                    id="destination"
-                                    className={`bg-white border-gray-200 ${
-                                      errors.destination ? "border-red-500" : ""
-                                    }`}
-                                  >
-                                    <SelectValue placeholder="Choose your departure location" />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    {destinations.map((dest) => (
-                                      <SelectItem key={dest.value} value={dest.value}>
-                                        {dest.label}
-                                      </SelectItem>
-                                    ))}
-                                  </SelectContent>
-                                </Select>
-                                {errors.destination && (
-                                  <p className="text-sm text-red-500">
-                                    {errors.destination.message}
-                                  </p>
-                                )}
-                              </div>
-
-                              {/* Yacht Selection & Charter Prices */}
-                              <div className="space-y-3">
-                                <Label className="text-gray-700 font-medium">
-                                  Select Yacht *
-                                </Label>
-                                <div className="flex gap-3 flex-wrap">
-                                  {yachtTypes.map((yacht) => (
-                                    <button
-                                      key={yacht}
-                                      type="button"
-                                      onClick={() => handleYachtSelect(yacht)}
-                                      className={`px-6 py-3 rounded-full text-sm font-medium transition-all ${
-                                        selectedYacht === yacht
-                                          ? "bg-gray-900 text-white"
-                                          : "bg-white text-gray-700 hover:bg-gray-100"
+                              {/* Destination (only for boats, not helicopter) */}
+                              {item.id !== "black-bird-heli" && (
+                                <div className="space-y-2">
+                                  <Label htmlFor="destination" className="text-gray-700 font-medium">
+                                    Destination *
+                                  </Label>
+                                  <Select onValueChange={(value) => setValue("destination", value)}>
+                                    <SelectTrigger
+                                      id="destination"
+                                      className={`bg-white border-gray-200 ${
+                                        errors.destination ? "border-red-500" : ""
                                       }`}
                                     >
-                                      {yacht}
-                                    </button>
-                                  ))}
-                                </div>
-                              </div>
-
-                              {selectedYacht && (
-                                <div className="space-y-4 animate-fade-in">
-                                  <Label className="text-gray-700 font-medium">
-                                    Select Charter Package *
-                                  </Label>
-
-                                  {/* Dar Prices */}
-                                  <div className="bg-white rounded-xl p-4 border-2 border-gray-200">
-                                    <h4 className="font-semibold text-gray-900 mb-3">
-                                      Dar Yacht Charter
-                                    </h4>
-                                    <div className="grid grid-cols-3 gap-2">
-                                      {yachtPrices.dar.map((option, index) => (
-                                        <button
-                                          key={index}
-                                          type="button"
-                                          onClick={() =>
-                                            handleCharterSelect("Dar Yacht Charter", option.type)
-                                          }
-                                          className={`p-3 rounded-lg text-sm transition-all ${
-                                            selectedLocation === "Dar Yacht Charter" &&
-                                            selectedCharterType === option.type
-                                              ? "bg-gray-900 text-white"
-                                              : "bg-gray-50 text-gray-700 hover:bg-gray-100"
-                                          }`}
-                                        >
-                                          <div className="font-medium">{option.type}</div>
-                                          <div className="text-xs mt-1 font-semibold">
-                                            {option.price}
-                                          </div>
-                                        </button>
+                                      <SelectValue placeholder="Choose your departure location" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      {destinations.map((dest) => (
+                                        <SelectItem key={dest.value} value={dest.value}>
+                                          {dest.label}
+                                        </SelectItem>
                                       ))}
-                                    </div>
-                                  </div>
-
-                                  {/* Zanzibar Prices */}
-                                  <div className="bg-white rounded-xl p-4 border-2 border-gray-200">
-                                    <h4 className="font-semibold text-gray-900 mb-3">
-                                      Zanzibar Charter
-                                    </h4>
-                                    <div className="grid grid-cols-3 gap-2">
-                                      {yachtPrices.zanzibar.map((option, index) => (
-                                        <button
-                                          key={index}
-                                          type="button"
-                                          onClick={() =>
-                                            handleCharterSelect("Zanzibar Charter", option.type)
-                                          }
-                                          className={`p-3 rounded-lg text-sm transition-all ${
-                                            selectedLocation === "Zanzibar Charter" &&
-                                            selectedCharterType === option.type
-                                              ? "bg-gray-900 text-white"
-                                              : "bg-gray-50 text-gray-700 hover:bg-gray-100"
-                                          }`}
-                                        >
-                                          <div className="font-medium">{option.type}</div>
-                                          <div className="text-xs mt-1 font-semibold">
-                                            {option.price}
-                                          </div>
-                                        </button>
-                                      ))}
-                                    </div>
-                                  </div>
-                                  {errors.charter && !selectedLocation && (
+                                    </SelectContent>
+                                  </Select>
+                                  {errors.destination && (
                                     <p className="text-sm text-red-500">
-                                      Please select a charter package
+                                      {errors.destination.message}
                                     </p>
                                   )}
                                 </div>
                               )}
 
-                              {/* Food Options */}
-                              <div className="space-y-3">
-                                <Label className="text-gray-700 font-medium flex items-center gap-2">
-                                  <Utensils className="h-4 w-4" />
-                                  Food Selection *
-                                </Label>
-                                <div className="grid grid-cols-2 gap-3">
-                                  {foodOptions.map((food) => (
-                                    <div
-                                      key={food}
-                                      className="flex items-center space-x-2 p-3 rounded-lg bg-white hover:bg-gray-50 transition-colors"
+                              {/* Helicopter or Yacht Selection */}
+                              {item.id === "black-bird-heli" ? (
+                                <div className="space-y-4">
+                                  <Label className="text-gray-700 font-medium">
+                                    Select Helicopter Service *
+                                  </Label>
+                                  <div className="space-y-3">
+                                    {/* Scenic Flights */}
+                                    <button
+                                      type="button"
+                                      onClick={() => handleCharterSelect("Helicopter", "Scenic Flights")}
+                                      className={`w-full p-4 rounded-lg text-left border-2 transition-all ${
+                                        selectedCharterType === "Scenic Flights"
+                                          ? "bg-gray-900 text-white border-gray-900"
+                                          : "bg-white text-gray-700 border-gray-200 hover:border-gray-400"
+                                      }`}
                                     >
-                                      <Checkbox
-                                        id={food}
-                                        checked={selectedFood.includes(food)}
-                                        onCheckedChange={(checked) =>
-                                          handleFoodChange(food, checked as boolean)
-                                        }
-                                      />
-                                      <Label
-                                        htmlFor={food}
-                                        className="text-sm text-gray-700 cursor-pointer flex-1"
-                                      >
-                                        {food}
-                                      </Label>
-                                    </div>
-                                  ))}
-                                </div>
-                                {errors.food && (
-                                  <p className="text-sm text-red-500">{errors.food.message}</p>
-                                )}
-                              </div>
+                                      <div className="font-semibold mb-2">Scenic Flights</div>
+                                      <div className="text-lg font-bold mb-2">$1,000 <span className="text-sm font-normal">(TZS 2,750,000)</span></div>
+                                      <ul className="text-sm space-y-1">
+                                        <li>• 20 MINUTES FLIGHT</li>
+                                        <li>• 4 PASSENGERS MAXIMUM</li>
+                                        <li>• PICKUP POINT: SEACLIFF</li>
+                                      </ul>
+                                    </button>
 
-                              {/* Drinks Options */}
-                              <div className="space-y-3">
-                                <Label className="text-gray-700 font-medium flex items-center gap-2">
-                                  <Wine className="h-4 w-4" />
-                                  Drinks Selection *
-                                </Label>
-                                <div className="grid grid-cols-2 gap-3">
-                                  {drinkOptions.map((drink) => (
-                                    <div
-                                      key={drink}
-                                      className="flex items-center space-x-2 p-3 rounded-lg bg-white hover:bg-gray-50 transition-colors"
+                                    {/* Hour Scenic Flight */}
+                                    <button
+                                      type="button"
+                                      onClick={() => handleCharterSelect("Helicopter", "Hour Scenic Flight")}
+                                      className={`w-full p-4 rounded-lg text-left border-2 transition-all ${
+                                        selectedCharterType === "Hour Scenic Flight"
+                                          ? "bg-gray-900 text-white border-gray-900"
+                                          : "bg-white text-gray-700 border-gray-200 hover:border-gray-400"
+                                      }`}
                                     >
-                                      <Checkbox
-                                        id={drink}
-                                        checked={selectedDrinks.includes(drink)}
-                                        onCheckedChange={(checked) =>
-                                          handleDrinksChange(drink, checked as boolean)
-                                        }
-                                      />
-                                      <Label
-                                        htmlFor={drink}
-                                        className="text-sm text-gray-700 cursor-pointer flex-1"
-                                      >
-                                        {drink}
-                                      </Label>
-                                    </div>
-                                  ))}
-                                </div>
-                                {errors.drinks && (
-                                  <p className="text-sm text-red-500">{errors.drinks.message}</p>
-                                )}
-                              </div>
+                                      <div className="font-semibold mb-2">Hour Scenic Flight</div>
+                                      <div className="text-lg font-bold mb-2">$2,500 <span className="text-sm font-normal">(TZS 6,875,000)</span></div>
+                                      <ul className="text-sm space-y-1">
+                                        <li>• 1 HOUR CRUISE</li>
+                                        <li>• 4 PASSENGERS</li>
+                                        <li>• PICKUP POINT: SEACLIFF</li>
+                                      </ul>
+                                    </button>
 
-                              {/* DJ Option */}
-                              <div className="p-4 rounded-lg bg-white border border-gray-200">
-                                <div className="flex items-center justify-between">
-                                  <div className="flex items-center gap-3">
-                                    <Music className="h-5 w-5 text-gray-700" />
-                                    <div>
-                                      <Label
-                                        htmlFor="dj"
-                                        className="text-gray-700 font-medium cursor-pointer"
-                                      >
-                                        Professional DJ Service
-                                      </Label>
-                                      <p className="text-xs text-gray-500">
-                                        Add music entertainment
-                                      </p>
+                                    {/* Dar - Zanzibar (One Way) */}
+                                    <button
+                                      type="button"
+                                      onClick={() => handleCharterSelect("Helicopter", "Dar - Zanzibar (One Way)")}
+                                      className={`w-full p-4 rounded-lg text-left border-2 transition-all ${
+                                        selectedCharterType === "Dar - Zanzibar (One Way)"
+                                          ? "bg-gray-900 text-white border-gray-900"
+                                          : "bg-white text-gray-700 border-gray-200 hover:border-gray-400"
+                                      }`}
+                                    >
+                                      <div className="font-semibold mb-2">Dar - Zanzibar (One Way)</div>
+                                      <div className="text-lg font-bold mb-2">$2,700 <span className="text-sm font-normal">(TZS 7,425,000)</span></div>
+                                      <ul className="text-sm space-y-1">
+                                        <li>• 1 HOUR CRUISE</li>
+                                        <li>• ONE WAY</li>
+                                        <li>• 4 PASSENGERS</li>
+                                        <li>• PICKUP POINT: SEACLIFF/AIRPORT</li>
+                                      </ul>
+                                    </button>
+
+                                    {/* Dar-Zanzibar (Two Ways) */}
+                                    <button
+                                      type="button"
+                                      onClick={() => handleCharterSelect("Helicopter", "Dar-Zanzibar (Two Ways)")}
+                                      className={`w-full p-4 rounded-lg text-left border-2 transition-all ${
+                                        selectedCharterType === "Dar-Zanzibar (Two Ways)"
+                                          ? "bg-gray-900 text-white border-gray-900"
+                                          : "bg-white text-gray-700 border-gray-200 hover:border-gray-400"
+                                      }`}
+                                    >
+                                      <div className="font-semibold mb-2">Dar-Zanzibar (Two Ways)</div>
+                                      <div className="text-lg font-bold mb-2">$3,500 <span className="text-sm font-normal">(TZS 9,625,000)</span></div>
+                                      <ul className="text-sm space-y-1">
+                                        <li>• TWO WAYS</li>
+                                        <li>• WAITING TIME 2 HRS</li>
+                                        <li>• 4 PASSENGERS</li>
+                                        <li>• PICKUP POINT: SEACLIFF/AIRPORT</li>
+                                      </ul>
+                                    </button>
+
+                                    {/* Special Charter */}
+                                    <button
+                                      type="button"
+                                      onClick={() => handleCharterSelect("Helicopter", "Special Charter")}
+                                      className={`w-full p-4 rounded-lg text-left border-2 transition-all ${
+                                        selectedCharterType === "Special Charter"
+                                          ? "bg-gray-900 text-white border-gray-900"
+                                          : "bg-white text-gray-700 border-gray-200 hover:border-gray-400"
+                                      }`}
+                                    >
+                                      <div className="font-semibold mb-2">Special Charter</div>
+                                      <div className="text-lg font-bold mb-2">Price upon Request</div>
+                                      <ul className="text-sm space-y-1">
+                                        <li>• SEND US PICKUP LOCATION AND DROPING POINT</li>
+                                      </ul>
+                                    </button>
+                                  </div>
+                                  {errors.charter && !selectedCharterType && (
+                                    <p className="text-sm text-red-500">
+                                      Please select a helicopter service
+                                    </p>
+                                  )}
+                                </div>
+                              ) : (
+                                <>
+                                  {/* Yacht Selection & Charter Prices */}
+                                  <div className="space-y-3">
+                                    <Label className="text-gray-700 font-medium">
+                                      Select Yacht *
+                                    </Label>
+                                    <div className="flex gap-3 flex-wrap">
+                                      {yachtTypes.map((yacht) => (
+                                        <button
+                                          key={yacht}
+                                          type="button"
+                                          onClick={() => handleYachtSelect(yacht)}
+                                          className={`px-6 py-3 rounded-full text-sm font-medium transition-all ${
+                                            selectedYacht === yacht
+                                              ? "bg-gray-900 text-white"
+                                              : "bg-white text-gray-700 hover:bg-gray-100"
+                                          }`}
+                                        >
+                                          {yacht}
+                                        </button>
+                                      ))}
                                     </div>
                                   </div>
-                                  <Switch
-                                    id="dj"
-                                    checked={djEnabled}
-                                    onCheckedChange={(checked) => {
-                                      setDjEnabled(checked);
-                                      setValue("dj", checked);
-                                    }}
-                                  />
+
+                                  {selectedYacht && (
+                                    <div className="space-y-4 animate-fade-in">
+                                      <Label className="text-gray-700 font-medium">
+                                        Select Charter Package *
+                                      </Label>
+
+                                      {/* Dar Prices */}
+                                      <div className="bg-white rounded-xl p-4 border-2 border-gray-200">
+                                        <h4 className="font-semibold text-gray-900 mb-3">
+                                          Dar Yacht Charter
+                                        </h4>
+                                        <div className="grid grid-cols-3 gap-2">
+                                          {yachtPrices.dar.map((option, index) => (
+                                            <button
+                                              key={index}
+                                              type="button"
+                                              onClick={() =>
+                                                handleCharterSelect("Dar Yacht Charter", option.type)
+                                              }
+                                              className={`p-3 rounded-lg text-sm transition-all ${
+                                                selectedLocation === "Dar Yacht Charter" &&
+                                                  selectedCharterType === option.type
+                                                  ? "bg-gray-900 text-white"
+                                                  : "bg-gray-50 text-gray-700 hover:bg-gray-100"
+                                              }`}
+                                            >
+                                              <div className="font-medium">{option.type}</div>
+                                              <div className="text-xs mt-1 font-semibold">
+                                                {option.price}
+                                              </div>
+                                            </button>
+                                          ))}
+                                        </div>
+                                      </div>
+
+                                      {/* Zanzibar Prices */}
+                                      <div className="bg-white rounded-xl p-4 border-2 border-gray-200">
+                                        <h4 className="font-semibold text-gray-900 mb-3">
+                                          Zanzibar Charter
+                                        </h4>
+                                        <div className="grid grid-cols-3 gap-2">
+                                          {yachtPrices.zanzibar.map((option, index) => (
+                                            <button
+                                              key={index}
+                                              type="button"
+                                              onClick={() =>
+                                                handleCharterSelect("Zanzibar Charter", option.type)
+                                              }
+                                              className={`p-3 rounded-lg text-sm transition-all ${
+                                                selectedLocation === "Zanzibar Charter" &&
+                                                  selectedCharterType === option.type
+                                                  ? "bg-gray-900 text-white"
+                                                  : "bg-gray-50 text-gray-700 hover:bg-gray-100"
+                                              }`}
+                                            >
+                                              <div className="font-medium">{option.type}</div>
+                                              <div className="text-xs mt-1 font-semibold">
+                                                {option.price}
+                                              </div>
+                                            </button>
+                                          ))}
+                                        </div>
+                                      </div>
+                                      {errors.charter && !selectedLocation && (
+                                        <p className="text-sm text-red-500">
+                                          Please select a charter package
+                                        </p>
+                                      )}
+                                    </div>
+                                  )}
+                                </>
+                              )}
+
+                              {/* Food Options (not for helicopter) */}
+                              {item.id !== "black-bird-heli" && (
+                                <div className="space-y-3">
+                                  <Label className="text-gray-700 font-medium flex items-center gap-2">
+                                    <Utensils className="h-4 w-4" />
+                                    Food Selection *
+                                  </Label>
+                                  <div className="grid grid-cols-2 gap-3">
+                                    {foodOptions.map((food) => (
+                                      <div
+                                        key={food}
+                                        className="flex items-center space-x-2 p-3 rounded-lg bg-white hover:bg-gray-50 transition-colors"
+                                      >
+                                        <Checkbox
+                                          id={food}
+                                          checked={selectedFood.includes(food)}
+                                          onCheckedChange={(checked) =>
+                                            handleFoodChange(food, checked as boolean)
+                                          }
+                                        />
+                                        <Label
+                                          htmlFor={food}
+                                          className="text-sm text-gray-700 cursor-pointer flex-1"
+                                        >
+                                          {food}
+                                        </Label>
+                                      </div>
+                                    ))}
+                                  </div>
+                                  {errors.food && (
+                                    <p className="text-sm text-red-500">{errors.food.message}</p>
+                                  )}
                                 </div>
-                              </div>
+                              )}
+
+                              {/* Drinks Options (not for helicopter) */}
+                              {item.id !== "black-bird-heli" && (
+                                <div className="space-y-3">
+                                  <Label className="text-gray-700 font-medium flex items-center gap-2">
+                                    <Wine className="h-4 w-4" />
+                                    Drinks Selection *
+                                  </Label>
+                                  <div className="grid grid-cols-2 gap-3">
+                                    {drinkOptions.map((drink) => (
+                                      <div
+                                        key={drink}
+                                        className="flex items-center space-x-2 p-3 rounded-lg bg-white hover:bg-gray-50 transition-colors"
+                                      >
+                                        <Checkbox
+                                          id={drink}
+                                          checked={selectedDrinks.includes(drink)}
+                                          onCheckedChange={(checked) =>
+                                            handleDrinksChange(drink, checked as boolean)
+                                          }
+                                        />
+                                        <Label
+                                          htmlFor={drink}
+                                          className="text-sm text-gray-700 cursor-pointer flex-1"
+                                        >
+                                          {drink}
+                                        </Label>
+                                      </div>
+                                    ))}
+                                  </div>
+                                  {errors.drinks && (
+                                    <p className="text-sm text-red-500">{errors.drinks.message}</p>
+                                  )}
+                                </div>
+                              )}
+
+                              {/* DJ Option (not for helicopter) */}
+                              {item.id !== "black-bird-heli" && (
+                                <div className="p-4 rounded-lg bg-white border border-gray-200">
+                                  <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-3">
+                                      <Music className="h-5 w-5 text-gray-700" />
+                                      <div>
+                                        <Label
+                                          htmlFor="dj"
+                                          className="text-gray-700 font-medium cursor-pointer"
+                                        >
+                                          Professional DJ Service
+                                        </Label>
+                                        <p className="text-xs text-gray-500">
+                                          Add music entertainment
+                                        </p>
+                                      </div>
+                                    </div>
+                                    <Switch
+                                      id="dj"
+                                      checked={djEnabled}
+                                      onCheckedChange={(checked) => {
+                                        setDjEnabled(checked);
+                                        setValue("dj", checked);
+                                      }}
+                                    />
+                                  </div>
+                                </div>
+                              )}
                             </div>
                           ))}
                       </div>
@@ -1047,9 +1243,11 @@ Please contact the customer to provide a quote.
                         Catamaran: {watched.catamaran || "Not selected"}
                       </p>
                       <p className="text-sm text-gray-700">
-                        Destination:{" "}
+                        {selectedCatamaranId === "black-bird-heli" ? "Pickup Point" : "Destination"}:{" "}
                         {watched.destination
-                          ? destinations.find((d) => d.value === watched.destination)?.label
+                          ? (selectedCatamaranId === "black-bird-heli" 
+                              ? helicopterPickupPoints.find((d) => d.value === watched.destination)?.label
+                              : destinations.find((d) => d.value === watched.destination)?.label)
                           : "Not selected"}
                       </p>
                       <p className="text-sm text-gray-700">
@@ -1057,35 +1255,37 @@ Please contact the customer to provide a quote.
                       </p>
                     </div>
 
-                    {/* Food & extras */}
-                    <div className="rounded-2xl bg-white p-4 shadow-sm space-y-2">
-                      <h3 className="text-sm font-semibold text-gray-900">Services</h3>
-                      <p className="text-sm text-gray-700">
-                        Food:{" "}
-                        {watched.food && watched.food.length
-                          ? watched.food.join(", ")
-                          : "No food selected"}
-                      </p>
-                      <p className="text-sm text-gray-700">
-                        Drinks:{" "}
-                        {watched.drinks && watched.drinks.length
-                          ? watched.drinks.join(", ")
-                          : "No drinks selected"}
-                      </p>
-                      <p className="text-sm text-gray-700">
-                        DJ service: {watched.dj ? "Yes" : "No"}
-                      </p>
-                      {(watched.activities && watched.activities.length > 0) && (
+                    {/* Food & extras (not for helicopter) */}
+                    {selectedCatamaranId !== "black-bird-heli" && (
+                      <div className="rounded-2xl bg-white p-4 shadow-sm space-y-2">
+                        <h3 className="text-sm font-semibold text-gray-900">Services</h3>
                         <p className="text-sm text-gray-700">
-                          Preferred activities: {watched.activities.join(", ")}
+                          Food:{" "}
+                          {watched.food && watched.food.length
+                            ? watched.food.join(", ")
+                            : "No food selected"}
                         </p>
-                      )}
-                      {watched.otherActivity && (
                         <p className="text-sm text-gray-700">
-                          Other activity preferences: {watched.otherActivity}
+                          Drinks:{" "}
+                          {watched.drinks && watched.drinks.length
+                            ? watched.drinks.join(", ")
+                            : "No drinks selected"}
                         </p>
-                      )}
-                    </div>
+                        <p className="text-sm text-gray-700">
+                          DJ service: {watched.dj ? "Yes" : "No"}
+                        </p>
+                        {(watched.activities && watched.activities.length > 0) && (
+                          <p className="text-sm text-gray-700">
+                            Preferred activities: {watched.activities.join(", ")}
+                          </p>
+                        )}
+                        {watched.otherActivity && (
+                          <p className="text-sm text-gray-700">
+                            Other activity preferences: {watched.otherActivity}
+                          </p>
+                        )}
+                      </div>
+                    )}
 
                     {/* Personal Requests */}
                     {(watched.allergies || watched.specialOccasion) && (

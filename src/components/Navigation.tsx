@@ -4,13 +4,20 @@ import { Button } from "@/components/ui/button";
 import { Menu, X } from "lucide-react";
 import logoImage from "@/assets/small-logo.jpeg";
 
+interface NavItem {
+  href: string;
+  label: string;
+  isLink?: boolean;
+}
+
 const Navigation = () => {
   const [isOpen, setIsOpen] = useState(false);
 
-  const navItems = [
+  const navItems: NavItem[] = [
     { href: "#home", label: "Home" },
     { href: "#fleet", label: "Our Fleet" },
     { href: "#locations", label: "Packages" },
+    { href: "/menu", label: "Menu", isLink: true },
     { href: "#team", label: "Our Team" },
     { href: "#contact", label: "Contact" },
   ];
@@ -30,15 +37,28 @@ const Navigation = () => {
 
         {/* Desktop Navigation */}
         <div className="hidden md:flex items-center space-x-8">
-          {navItems.map((item) => (
-            <a
-              key={item.href}
-              href={item.href}
-              className="text-foreground hover:text-primary transition-colors duration-300 font-quicksand font-black"
-            >
-              {item.label}
-            </a>
-          ))}
+          {navItems.map((item) => {
+            if (item.isLink) {
+              return (
+                <Link
+                  key={item.href}
+                  to={item.href}
+                  className="text-foreground hover:text-primary transition-colors duration-300 font-quicksand font-black"
+                >
+                  {item.label}
+                </Link>
+              );
+            }
+            return (
+              <a
+                key={item.href}
+                href={item.href}
+                className="text-foreground hover:text-primary transition-colors duration-300 font-quicksand font-black"
+              >
+                {item.label}
+              </a>
+            );
+          })}
           <Link to="/booking">
             <Button variant="ocean" size="sm" className="font-quicksand">
               Book Now
@@ -61,16 +81,30 @@ const Navigation = () => {
       {isOpen && (
         <div className="md:hidden bg-white/95 backdrop-blur-md border-b border-white/20">
           <div className="container mx-auto px-4 py-4 space-y-4">
-            {navItems.map((item) => (
-              <a
-                key={item.href}
-                href={item.href}
-                className="block text-foreground hover:text-primary transition-colors duration-300 font-quicksand font-black"
-                onClick={() => setIsOpen(false)}
-              >
-                {item.label}
-              </a>
-            ))}
+            {navItems.map((item) => {
+              if (item.isLink) {
+                return (
+                  <Link
+                    key={item.href}
+                    to={item.href}
+                    className="block text-foreground hover:text-primary transition-colors duration-300 font-quicksand font-black"
+                    onClick={() => setIsOpen(false)}
+                  >
+                    {item.label}
+                  </Link>
+                );
+              }
+              return (
+                <a
+                  key={item.href}
+                  href={item.href}
+                  className="block text-foreground hover:text-primary transition-colors duration-300 font-quicksand font-black"
+                  onClick={() => setIsOpen(false)}
+                >
+                  {item.label}
+                </a>
+              );
+            })}
             <Link to="/booking" className="w-full">
               <Button variant="ocean" className="w-full font-quicksand" onClick={() => setIsOpen(false)}>
                 Book Now

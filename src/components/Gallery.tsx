@@ -15,73 +15,95 @@ import img12 from '@/assets/gallery/img-12.jpeg';
 import img13 from '@/assets/gallery/img-13.jpeg';
 
 const Gallery = () => {
+  // All 13 unique images from gallery folder - no duplicates
+  // Using explicit image sources to ensure uniqueness
+  const imageSources = [
+    img1, img2, img3, img4, img5, img6, img7, img8, img9, img10, img11, img12, img13
+  ];
+
+  // Verify all images are unique
+  const uniqueImages = Array.from(new Set(imageSources));
+  if (uniqueImages.length !== imageSources.length) {
+    console.warn('Warning: Duplicate images detected in gallery!');
+  }
+
   const items = [
     {
-      id: "1",
+      id: "gallery-img-1",
       img: img1,
       height: 400,
     },
     {
-      id: "2",
+      id: "gallery-img-2",
       img: img2,
       height: 350,
     },
     {
-      id: "3",
+      id: "gallery-img-3",
       img: img3,
       height: 500,
     },
     {
-      id: "4",
+      id: "gallery-img-4",
       img: img4,
       height: 300,
     },
     {
-      id: "5",
+      id: "gallery-img-5",
       img: img5,
       height: 450,
     },
     {
-      id: "6",
+      id: "gallery-img-6",
       img: img6,
       height: 380,
     },
     {
-      id: "7",
+      id: "gallery-img-7",
       img: img7,
       height: 420,
     },
     {
-      id: "8",
+      id: "gallery-img-8",
       img: img8,
       height: 360,
     },
     {
-      id: "9",
+      id: "gallery-img-9",
       img: img9,
       height: 480,
     },
     {
-      id: "10",
+      id: "gallery-img-10",
       img: img10,
       height: 340,
     },
     {
-      id: "11",
+      id: "gallery-img-11",
       img: img11,
       height: 410,
     },
     {
-      id: "12",
+      id: "gallery-img-12",
       img: img12,
       height: 390,
     },
     {
-      id: "13",
+      id: "gallery-img-13",
       img: img13,
       height: 440,
     },
   ];
+
+  // Final check: ensure no duplicate image sources
+  const imageMap = new Map();
+  items.forEach(item => {
+    if (imageMap.has(item.img)) {
+      console.error(`Duplicate image detected: ${item.id} uses same image as ${imageMap.get(item.img)}`);
+    } else {
+      imageMap.set(item.img, item.id);
+    }
+  });
 
   return (
     <section className="py-20 bg-white">

@@ -130,10 +130,33 @@ const Masonry: React.FC<MasonryProps> = ({
   const grid = useMemo<GridItem[]>(() => {
     if (!width) return [];
 
+    // Ensure no duplicate items by using unique IDs AND unique image sources
+    const seenIds = new Set<string>();
+    const seenImages = new Set<string | any>();
+    const uniqueItems = items.filter((item) => {
+      // Check for duplicate IDs
+      if (seenIds.has(item.id)) {
+        console.warn(`Duplicate ID detected: ${item.id}`);
+        return false;
+      }
+      // Check for duplicate image sources
+      if (seenImages.has(item.img)) {
+        console.warn(`Duplicate image detected for ID: ${item.id}`);
+        return false;
+      }
+      seenIds.add(item.id);
+      seenImages.add(item.img);
+      return true;
+    });
+
+    if (uniqueItems.length !== items.length) {
+      console.warn(`Filtered out ${items.length - uniqueItems.length} duplicate items`);
+    }
+
     const colHeights = new Array(columns).fill(0);
     const columnWidth = width / columns;
 
-    return items.map(child => {
+    return uniqueItems.map(child => {
       const col = colHeights.indexOf(Math.min(...colHeights));
       const x = columnWidth * col;
       const height = child.height / 2;
@@ -144,6 +167,15 @@ const Masonry: React.FC<MasonryProps> = ({
       return { ...child, x, y, w: columnWidth, h: height };
     });
   }, [columns, items, width]);
+
+  // Absolute-positioned children need an explicit container height to avoid overlapping
+  // following sections on small screens.
+  const containerHeight = useMemo(() => {
+    if (!grid.length) return 0;
+    const maxBottom = Math.max(...grid.map((i) => i.y + i.h));
+    // account for item padding / breathing room
+    return Math.ceil(maxBottom + 24);
+  }, [grid]);
 
   const hasMounted = useRef(false);
 
@@ -238,7 +270,14 @@ const Masonry: React.FC<MasonryProps> = ({
   };
 
   return (
-    <div ref={containerRef} className="list" style={{ minHeight: '600px' }}>
+    <div
+      ref={containerRef}
+      className="list"
+      style={{
+        height: containerHeight ? `${containerHeight}px` : undefined,
+        minHeight: '600px',
+      }}
+    >
       {grid.map(item => {
         return (
           <div
