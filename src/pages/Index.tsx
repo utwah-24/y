@@ -1,6 +1,7 @@
 import Navigation from "@/components/Navigation";
 import Hero from "@/components/Hero";
 import Fleet from "@/components/Fleet";
+import FoodMenu from "@/components/FoodMenu";
 import Gallery from "@/components/Gallery";
 import Locations from "@/components/Locations";
 import Team from "@/components/Team";
@@ -18,6 +19,9 @@ const Index = () => {
       </AnimatedSection>
       <AnimatedSection animation="fadeInUp" delay={100}>
         <Fleet />
+      </AnimatedSection>
+      <AnimatedSection animation="fadeInUp" delay={100}>
+        <FoodMenu />
       </AnimatedSection>
       <AnimatedSection animation="fadeInUp" delay={100}>
         <Gallery />
